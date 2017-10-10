@@ -5,6 +5,7 @@
 const express = require('express');
 const fileUpload = require('express-fileupload');
 const mongo = require('mongodb');
+const fs = require('fs');
 
 
 // REQUIRE MODELS
@@ -47,20 +48,25 @@ app.post('/upload', (req, res) => {
       return res.status(400).send('No files uploaded.');
    }
 
-   let file = req.files.uploadFile;
+   zip = /zip|zi_/;
+   if (zip.test(req.files.name)) {
+      return res.status(400).send('File must be a compressed zip with extension .zip or .zi_');
+   }
+
+   let zipFile = req.files.uploadFile;
 
    // Put file in uploadFiles dir
-   file.mv(`./server/uploadFiles/${file.name}`, (err) => {
+   zipFile.mv(`./server/uploadFiles/${zipFile.name}`, (err) => {
       if (err) {
          return res.status(500).send(err);
       }
-      // Decompress the file into a dir with filename
-      var dirName = `${file.name.substring(0, file.name.lastIndexOf('.'))}`;
+      // Decompress the zipFile into a dir with zipFilename
+      var dirName = `${zipFile.name.substring(0, zipFile.name.lastIndexOf('.'))}`;
       console.log('DIRNAME: ' + dirName);
-      console.log('FILENAME: ' + file.name);
+      console.log('FILENAME: ' + zipFile.name);
 
 
-      decompressLogs(`${sourceDir}/${file.name}`, `${sourceDir}/${dirName}`);
+      decompressLogs(`${sourceDir}/${zipFile.name}`, `${sourceDir}/${dirName}`);
       parseLog(`${sourceDir}/${dirName}/logfile.txt`);
 
 
