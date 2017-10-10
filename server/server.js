@@ -4,6 +4,7 @@
 // REQUIRE PACKAGES
 const express = require('express');
 const fileUpload = require('express-fileupload');
+const mongo = require('mongodb');
 
 
 // REQUIRE MODELS
@@ -12,6 +13,10 @@ const fileUpload = require('express-fileupload');
 // REQUIRE METHODS
 const {decompressLogs, parseLog} = require('./utils/util');
 
+
+// SETUP DB
+require('./config/config');
+const {mongoose} = require('./config/mongoose');
 
 
 // SETUP APP
@@ -23,8 +28,11 @@ app.use(fileUpload());
 
 
 // SETUP ENVIRONMENT VARIABLES
-const port = process.env.PORT || 3000;
+const port = process.env.PORT;
 const sourceDir = './server/uploadFiles';
+
+
+
 
 
 // APP ROUTES

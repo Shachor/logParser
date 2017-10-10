@@ -1,5 +1,6 @@
 .jshintrc
 playground/
 node_modules/
-uploadFiles/
 scratchpad.js
+!uploadFiles/.gitkeep
+uploadFiles/
