@@ -1,0 +1,15 @@
+{
+  "name": "logparser",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "dependencies": {
+    "adm-zip": "^0.4.7",
+    "body-parser": "^1.18.2",
+    "express": "^4.16.1",
+    "express-fileupload": "^0.3.0",
+    "line-reader": "^0.4.0",
+    "mongodb": "^2.2.31",
+    "mongoose": "^4.12.0"
+  }
+}

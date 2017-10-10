@@ -1,0 +1,5 @@
+.jshintrc
+playground/
+node_modules/
+uploadFiles/
+scratchpad.js
