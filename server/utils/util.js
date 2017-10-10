@@ -5,6 +5,8 @@
 const Admzip = require('adm-zip');
 const lineReader = require('line-reader');
 
+const {LogEntry} = require('./../models/logEntry');
+
 
 //=============================================================================
 // FUNCTIONS
@@ -32,42 +34,57 @@ var decompressLogs = (file, targetDir) => {
 
 };
 
-// decompressLogs(`./server/utils/test.zip`, './temp');
+
 
 
 // PARSE THE LINES
 var parseLog = (logFile) => {
-   var logLine = {};
-   var tempTs;
+   var logLine = {};    // Init empty object
+   var tempTs;    // Used for adding TS to stack errors to keep it attached in time to original log error
 
    lineReader.eachLine(logFile, (line, last, cb) => {
+      // REGEX patterns for parsing log lines
       ts = /^(\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}:\d{2},\d{3})/g;
       dm = /([\[].*[\]])/g;
       lvl = /(INFO|DEBUG|ERROR|WARN)/g;
       mes = /\s-\s(.*$)/g;
       err = /.*/;
 
+      // This will pull the dir structure and trailing extension off file name
+      var logName = `${logFile.substring(logFile.lastIndexOf('/') + 1, logFile.lastIndexOf('.'))}`;
+
+      // If line is stack error, attach previous timestamp. This will group the
+      // stack with the error that generated it.
       if (!ts.test(line)) {
          logLine = {
-            timestamp: tempTs || [''],
-            daemon: [''],
+            logName: logName,
+            logTimestamp: tempTs || [''],
+            processName: [''],
             level: [''],
             message: line.match(err)
          };
+      // If not stack error, parse line and store in object
       } else {
          logLine = {
-            timestamp: line.match(ts),
-            daemon: line.match(dm),
+            logName: logName,
+            logTimestamp: line.match(ts),
+            processName: line.match(dm),
             level: line.match(lvl),
             message: line.match(mes)
          };
       }
 
-      tempTs = logLine.timestamp;
+      // This allows us to save previous TS for use with stack error
+      tempTs = logLine.logTimestamp;
 
-      console.log(`${logLine.timestamp[0]} ${logLine.daemon[0]} ${logLine.level[0]} ${logLine.message[0]}`);
 
-      cb();
+      // Create new Object from model and save to Mongo
+      var logEntry = new LogEntry(logLine);
+      logEntry.save();
+
+      // console.log(`${logLine.logTimestamp[0]} ${logLine.processName[0]} ${logLine.level[0]} ${logLine.message[0]}`);
+
+      cb();    // Once line is finished, call the next.
    });
 };
 

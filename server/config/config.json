@@ -1,10 +1,10 @@
 {
    "test": {
       "PORT": 3000,
-      "MONGODB_URI": "mongodb://localhost:27017/logParserTest",
+      "MONGODB_URI": "mongodb://localhost:27017/logParserTest"
    },
    "development": {
       "PORT": 3000,
-      "MONGODB_URI": "mongodb://localhost:27017/logParser",
+      "MONGODB_URI": "mongodb://localhost:27017/logParser"
    }
 }
