@@ -12,7 +12,7 @@ const fs = require('fs');
 
 
 // REQUIRE METHODS
-const {decompressLogs, parseLog} = require('./utils/util');
+const {decompressLogs, parseLog, fileList} = require('./utils/util');
 
 
 // SETUP DB
@@ -30,7 +30,7 @@ app.use(fileUpload());
 
 // SETUP ENVIRONMENT VARIABLES
 const port = process.env.PORT;
-const sourceDir = './server/uploadFiles';
+const sourceDir = './server/uploadFiles/';
 
 
 
@@ -65,9 +65,20 @@ app.post('/upload', (req, res) => {
       console.log('DIRNAME: ' + dirName);
       console.log('FILENAME: ' + zipFile.name);
 
+      // Unzip the logs into a directory based on zip file name
+      decompressLogs(`${sourceDir}${zipFile.name}`, `${sourceDir}${dirName}`);
 
-      decompressLogs(`${sourceDir}/${zipFile.name}`, `${sourceDir}/${dirName}`);
-      parseLog(`${sourceDir}/${dirName}/logfile.txt`);
+      // Get a list of all the names of files and stick in files[]
+      files = fileList(`${sourceDir}${dirName}`);
+
+      // Pull out each line from each file, parse it, and create a document in Mongo
+      files.forEach(file => {
+         lf = /.log/;
+         if (lf.test(file)) {
+            parseLog(`${sourceDir}${dirName}/${file}`);
+         }
+      });
+
 
 
       res.send('File Uploaded!');

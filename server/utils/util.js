@@ -4,6 +4,7 @@
 // REQUIRE PACKAGES
 const Admzip = require('adm-zip');
 const lineReader = require('line-reader');
+const fs = require('fs');
 
 const {LogEntry} = require('./../models/logEntry');
 
@@ -89,9 +90,22 @@ var parseLog = (logFile) => {
 };
 
 
+var fileList = (dir) => {
+   var files = [];
+
+   fs.readdirSync(dir).forEach(file => {
+      files.push(file);
+   });
+
+   return files;
+};
+
+
+
 module.exports = {
    decompressLogs,
-   parseLog
+   parseLog,
+   fileList
 };
 
 
