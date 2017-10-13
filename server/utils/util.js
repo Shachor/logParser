@@ -4,31 +4,64 @@
 // REQUIRE PACKAGES
 const Admzip = require('adm-zip');
 const lineReader = require('line-reader');
+const formidable = require('formidable');
 const fs = require('fs');
 
 const {LogEntry} = require('./../models/logEntry');
 
+const sourceDir = './server/uploadFiles/';
 
 //=============================================================================
 // FUNCTIONS
 //=============================================================================
 
+
+// UPLOAD THE FILE
+var uploadFile = (req) => {
+   var form = new formidable.IncomingForm();
+
+   form.parse(req);
+   // console.log(form.file.name);
+
+   form.on('fileBegin', (name, file) => {
+      file.path = sourceDir + file.name;
+   });
+
+   form.on('file', (name, file) => {
+      console.log('Uploaded: ' + file.name);
+   });
+};
+
+
+
+
 // UNZIP THE LOG FILES
 var decompressLogs = (file, targetDir) => {
    try {
+      // console.log('decompressLogs: ', file);
       // REQUIRE VARIABLES
       const zip = new Admzip(file);     // THIS is correct syntax for PATH/NAME
       var zipEntries = zip.getEntries();
+
+      let files = [];
 
       // Change the entryName inside the zip header to remove path
       zipEntries.forEach((entry) => {
          str = String.raw`${entry.entryName}`;
          entry.entryName = str.substring(str.lastIndexOf(`\\`) + 1);
+         files.push(entry.entryName.toString());
          console.log(entry.entryName.toString());
+
       });
 
       // Extract the archive
       zip.extractAllTo(targetDir, true);     // THIS is correct syntax for PATH
+
+      // SHOULD PROBABLY RETURN zipEntries TO GIVE ME FILE LISTENING
+      return files;
+
+
+
    } catch (e) {
       return console.log('ZIP process error', e);
    }
@@ -105,7 +138,8 @@ var fileList = (dir) => {
 module.exports = {
    decompressLogs,
    parseLog,
-   fileList
+   fileList,
+   uploadFile
 };
 
 
