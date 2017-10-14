@@ -16,30 +16,6 @@ const sourceDir = './server/uploadFiles/';
 //=============================================================================
 
 
-// UPLOAD THE FILE -- BASED ON FORMIDABLE
-// var uploadFile = (req) => {
-//    var form = new formidable.IncomingForm();
-//
-//    form.parse(req);
-//    console.log(JSON.stringify(form));
-//
-//    form.on('fileBegin', (name, file) => {
-//       file.path = sourceDir + file.name;
-//    });
-//
-//    var fileName = '';
-//
-//    form.on('file', (name, file) => {
-//       console.log('Uploaded: ' + file.name);
-//       fileName = file.name;
-//    });
-//
-//    // console.log(fileName);
-//    return fileName;
-// };
-
-
-
 
 // UNZIP THE LOG FILES
 var decompressLogs = (file) => {
@@ -135,18 +111,9 @@ var parseLog = async (logFile) => {
 
 
 
-
-// OBSOLETE
-// var fileList = (dir) => {
-//    var files = [];
-//
-//    fs.readdirSync(dir).forEach(file => {
-//       files.push(file);
-//    });
-//
-//    return files;
-// };
-
+//=============================================================================
+// MAINTENANCE FUNCTIONS
+//=============================================================================
 
 // zipFilter FILTERS OUT ALL FILE UPLOADS EXCEPT ZIP
 const zipFilter = function(req, file, cb) {
