@@ -3,18 +3,19 @@
 
 // REQUIRE PACKAGES
 const express = require('express');
-const formidable = require('formidable');
+const multer = require('multer');   // FILE UPLOADS
 const mongo = require('mongodb');
-const handlebars = require('handlebars');
-const hbs = require('hbs');
-const fs = require('fs');
+const handlebars = require('handlebars');    //TEMPLATE
+const hbs = require('hbs');   // TEMPLATE VIEW ENGINE
+const del = require('del');   // DELETE TEST DATA
+const fs = require('fs');     // ACCESS TO FILESYSTEM
 
 
 // REQUIRE MODELS
 
 
 // REQUIRE METHODS
-const {decompressLogs, parseLog, fileList, uploadFile} = require('./utils/util');
+const {decompressLogs, parseLog, zipFilter, cleanFolder} = require('./utils/util');
 
 
 // SETUP DB
@@ -30,6 +31,17 @@ app.use(express.static(publicPath));
 hbs.registerPartials(__dirname + '/views/partials');
 app.set('view engine', 'hbs');
 
+// MULTER SETTINGS
+var storage = multer.diskStorage({
+   destination: './server/uploadFiles/',
+   filename: (req, file, cb) => {
+      cb(null, file.originalname);
+   }
+});
+var upload = multer({storage: storage
+                     // , fileFilter: zipFilter
+                  });
+
 
 
 // SETUP ENVIRONMENT VARIABLES
@@ -37,6 +49,9 @@ const port = process.env.PORT;
 const sourceDir = './server/uploadFiles/';
 
 
+
+// CLEAN EVERYTHING BEFORE RUNNING - TESTING
+cleanFolder(sourceDir);
 
 
 
@@ -46,14 +61,29 @@ app.get('/', (req, res) => {
 });
 
 
-app.post('/upload', (req, res) => {
-   // Upload the file to uploadFiles
-   uploadFile(req);
-   // Decompress the file into
-   // decompressLogs(req.file.name);
-   // console.log(req.file.name);
+app.post('/upload', upload.single('upload'), async (req, res) => {
+   try {
+      // console.log('BODY: ', req.body);
+      // console.log('FILE: ', req.file);
+      let file = req.file.filename;
 
-   res.render('upload');
+      let decomp = await decompressLogs(sourceDir + file);
+
+      console.log(decomp.files);
+
+      decomp.files.forEach((file) => {
+         logfile = /.log/;
+         if (logfile.test(file)) {
+            parseLog(decomp.targetDir + '/' + file);
+         }
+      });
+
+      res.render('upload');
+   } catch (e) {
+      res.status(400).send('Something went wrong. ', e);
+   }
+
+
 
 });
 

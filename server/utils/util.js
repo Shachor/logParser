@@ -4,8 +4,8 @@
 // REQUIRE PACKAGES
 const Admzip = require('adm-zip');
 const lineReader = require('line-reader');
-const formidable = require('formidable');
 const fs = require('fs');
+const del = require('del');
 
 const {LogEntry} = require('./../models/logEntry');
 
@@ -16,27 +16,33 @@ const sourceDir = './server/uploadFiles/';
 //=============================================================================
 
 
-// UPLOAD THE FILE
-var uploadFile = (req) => {
-   var form = new formidable.IncomingForm();
-
-   form.parse(req);
-   // console.log(form.file.name);
-
-   form.on('fileBegin', (name, file) => {
-      file.path = sourceDir + file.name;
-   });
-
-   form.on('file', (name, file) => {
-      console.log('Uploaded: ' + file.name);
-   });
-};
+// UPLOAD THE FILE -- BASED ON FORMIDABLE
+// var uploadFile = (req) => {
+//    var form = new formidable.IncomingForm();
+//
+//    form.parse(req);
+//    console.log(JSON.stringify(form));
+//
+//    form.on('fileBegin', (name, file) => {
+//       file.path = sourceDir + file.name;
+//    });
+//
+//    var fileName = '';
+//
+//    form.on('file', (name, file) => {
+//       console.log('Uploaded: ' + file.name);
+//       fileName = file.name;
+//    });
+//
+//    // console.log(fileName);
+//    return fileName;
+// };
 
 
 
 
 // UNZIP THE LOG FILES
-var decompressLogs = (file, targetDir) => {
+var decompressLogs = (file) => {
    try {
       // console.log('decompressLogs: ', file);
       // REQUIRE VARIABLES
@@ -55,11 +61,16 @@ var decompressLogs = (file, targetDir) => {
       });
 
       // Extract the archive
+      let targetDir = `${file.substring(0, file.lastIndexOf('.'))}`;
       zip.extractAllTo(targetDir, true);     // THIS is correct syntax for PATH
 
       // SHOULD PROBABLY RETURN zipEntries TO GIVE ME FILE LISTENING
-      return files;
+      let decompressed = {
+         files,
+         targetDir
+      };
 
+      return decompressed;
 
 
    } catch (e) {
@@ -72,11 +83,11 @@ var decompressLogs = (file, targetDir) => {
 
 
 // PARSE THE LINES
-var parseLog = (logFile) => {
+var parseLog = async (logFile) => {
    var logLine = {};    // Init empty object
    var tempTs;    // Used for adding TS to stack errors to keep it attached in time to original log error
 
-   lineReader.eachLine(logFile, (line, last, cb) => {
+   await lineReader.eachLine(logFile, (line, last, cb) => {
       // REGEX patterns for parsing log lines
       ts = /^(\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}:\d{2},\d{3})/g;
       dm = /([\[].*[\]])/g;
@@ -123,23 +134,43 @@ var parseLog = (logFile) => {
 };
 
 
-var fileList = (dir) => {
-   var files = [];
 
-   fs.readdirSync(dir).forEach(file => {
-      files.push(file);
-   });
 
-   return files;
+// OBSOLETE
+// var fileList = (dir) => {
+//    var files = [];
+//
+//    fs.readdirSync(dir).forEach(file => {
+//       files.push(file);
+//    });
+//
+//    return files;
+// };
+
+
+// zipFilter FILTERS OUT ALL FILE UPLOADS EXCEPT ZIP
+const zipFilter = function(req, file, cb) {
+   if (!file.originalName.match(/\.(zip|zi_)$/)) {
+      return cb(new Error('Only zip or zi_ files are allowed.'), false);
+   }
+   cb(null, true);
 };
+
+
+// cleanFolder() CLEARS OUT ALL TEST DATA
+const cleanFolder = function(folderPath) {
+   del.sync([`${folderPath}*`, `!${folderPath}`, `!${folderPath}.gitkeep`]);
+   LogEntry.collection.drop();
+};
+
 
 
 
 module.exports = {
    decompressLogs,
    parseLog,
-   fileList,
-   uploadFile
+   zipFilter,
+   cleanFolder
 };
 
 
